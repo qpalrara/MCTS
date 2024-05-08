@@ -1,7 +1,7 @@
 class Node {
   constructor(board, player, parent) {
-    this.state = new State(boardToString(board), player);
-    this.board = boardToString(board);
+    this.state = new State(board, player);
+    this.board = board;
     this.player = player; // 현재 board 에서 마지막으로 둔 player
     this.parent = parent;
     this.children = [];
@@ -62,11 +62,10 @@ class Node {
    * 가능한 행동을 결정하는 함수
    */
   determine() {
-    const board = stringToBoard(this.board);
-    if (!board.includes(0)) return [];
+    if (!this.board.includes(0)) return [];
     const b = [];
     for (let i = 0; i < 225; i++) {
-      const newBoard = board.slice();
+      const newBoard = this.board.slice();
       if (newBoard[i] === 0) {
         newBoard[i] = 3 - this.player;
         b.push(newBoard);
@@ -76,7 +75,7 @@ class Node {
   }
 
   isTerminal() {
-    return isWin(stringToBoard(this.board), true) !== 0 || this.board.includes(0) === false;
+    return isWin(this.board) !== 0 || this.board.includes(0) === false;
   }
 
   isFull() {
@@ -88,7 +87,7 @@ class Node {
   }
 
   simulate() {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       const result = this.state.simulate();
       switch (result[0]) {
         case this.player:
@@ -705,7 +704,7 @@ const omokWin = [
   [163, 177, 191, 205, 219],
   [164, 178, 192, 206, 220],
 ];
-consticWin = [
+const ticWin = [
   [0, 1, 2],
   [3, 4, 5],
   [6, 7, 8],
@@ -716,13 +715,15 @@ consticWin = [
   [2, 4, 6],
 ];
 
-export function isWin(board, omok = false) {
-  if (omok) return isOmokWin(board);
+export function isWin(board) {
+  if (board.length===225) return isOmokWin(board);
   for (const [a, b, c] of ticWin) {
     if (board[a] === board[b] && board[b] === board[c] && board[a] !== 0) {
+      board = null;
       return board[a];
     }
   }
+  board = null;
   return 0;
 }
 
@@ -742,15 +743,6 @@ export function isOmokWin(board) {
   return 0;
 }
 
-
-function boardToString(board) {
-  return board.join(",");
-}
-
-function stringToBoard(str) {
-  return str.split(",").map((x) => parseInt(x));
-}
-
 class State {
   constructor(board, player) {
     this.board = board;
@@ -759,9 +751,9 @@ class State {
   }
 
   simulate() {
-    const newBoard = stringToBoard(this.board).slice();
-    if (isWin(newBoard, true)) {
-      return [isWin(newBoard, true), this.round];
+    const newBoard = this.board.slice();
+    if (isWin(newBoard)) {
+      return [isWin(newBoard), this.round];
     }
     const randomMove = () => {
       let r = Math.floor(Math.random() * 225);
@@ -774,8 +766,8 @@ class State {
     while (newBoard.includes(0)) {
       this.round += 1;
       newBoard[randomMove()] = 3 - this.player;
-      if (isWin(newBoard, true)) {
-        return [isWin(newBoard, true), this.round];
+      if (isWin(newBoard)) {
+        return [isWin(newBoard), this.round];
       }
       this.player = this.player === 1 ? 2 : 1;
     }
@@ -786,12 +778,10 @@ class State {
 export default class MCTS {
   constructor(
     n_iterations = 1000,
-    depth = 5,
     board = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    player = 1
+    player = 1,
   ) {
     this.n_iterations = n_iterations;
-    this.depth = depth;
     this.board = board;
     this.player = player;
     this.root = new Node(board, player, null);
@@ -799,7 +789,7 @@ export default class MCTS {
 
   search() {
     for (let i = 0; i < this.n_iterations; i++) {
-      console.log(i);
+      if (i%100===0) console.log(Math.round(i/this.n_iterations*100*10)/10 + "%");
       let node = this.root;
 
       node = node.selection();
