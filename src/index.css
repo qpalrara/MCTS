@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'MaplestoryLight';
+  src: url('../fonts/MaplestoryLight.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'RegularFont';
+  font-weight: 400;
+  font-style: normal;
+  src: url('https://cdn.jsdelivr.net/gh/webfontworld/tmoney/TmoneyRoundWind-Regular.eot');
+  src: url('https://cdn.jsdelivr.net/gh/webfontworld/tmoney/TmoneyRoundWind-Regular.eot?#iefix') format('embedded-opentype'),
+      url('https://cdn.jsdelivr.net/gh/webfontworld/tmoney/TmoneyRoundWind-Regular.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/webfontworld/tmoney/TmoneyRoundWind-Regular.woff') format('woff'),
+      url('https://cdn.jsdelivr.net/gh/webfontworld/tmoney/TmoneyRoundWind-Regular.ttf') format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'D2Coding';
+  src: url('../fonts/D2Coding.ttf') format('truetype');
+}
+
+.text-font {
+  @apply md:text-base;
+  font-family: 'RegularFont', 'MaplestoryLight';
+  line-height: 34px;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  color: rgb(55, 62, 72) !important;
+}
+
+.title-font {
+  font-family: 'MaplestoryLight', 'RegularFont';
+  color: rgb(38, 45, 64);
+  font-weight: bold;
+}
+
+.rainbow {
+  background: linear-gradient(40deg, #ff8a8a 20%, #f771d1 40%, #a18aff 60%, #4cd2ff 80%, #6afc82 100%);
+}
