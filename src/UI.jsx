@@ -59,9 +59,6 @@ export function Menu() {
             과제연구 3 - MCTS
             <br />
             <br />
-            제작자: 이종민, 조승민
-            <br />
-            <br />
             github:{" "}
             <Reference location="https://github.com/qpalrara/MCTS" blank={true}>
             링크
@@ -69,6 +66,9 @@ export function Menu() {
             <br />
             <br />
             ㅇㅅㅇ
+            <br/>
+            <br/>
+            ㅇㅁㅇ
           </div>
         </div>
       </div>

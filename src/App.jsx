@@ -1,9 +1,10 @@
-import { useState, Fragment } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import MCTS, { isWin, isOmokWin } from "./engine";
 import { Toggle, Menu } from "./UI";
+import { load } from "three/examples/jsm/libs/opentype.module.js";
 
-function Tile({ index, board, setBoard, play, autoplayOn, size=3 }) {
+function Tile({ index, board, setBoard, play, autoplayOn, size = 3 }) {
   const value = board[index];
   return (
     <div
@@ -20,14 +21,14 @@ function Tile({ index, board, setBoard, play, autoplayOn, size=3 }) {
         setBoard(newBoard);
       }}
       className={`w-full aspect-square
-      border-black border-2 
+      border-black border-2 hover:bg-gray-200
       text-center flex justify-center items-center font-semibold 
       ${
-        size === 3 ? "xl:text-8xl lg:text-8xl md:text-7xl sm:text-6xl text-5xl" : "xl:text-3xl text-2xl"
+        size === 3
+          ? "xl:text-8xl lg:text-8xl md:text-7xl sm:text-6xl text-5xl"
+          : "xl:text-3xl text-2xl"
       }
-      ${
-        value === 1 ? "text-blue-500" : value === 2 ? "text-red-500" : ""
-      }`}
+      ${value === 1 ? "text-blue-500" : value === 2 ? "text-red-500" : ""}`}
     >
       {value === 1 ? "O" : value === 2 ? "X" : ""}
     </div>
@@ -101,22 +102,57 @@ function Tree({ rootNode }) {
 function App() {
   const [showTree, setShowTree] = useState(false);
   const [rootNode, setRootNode] = useState(null);
-  const [autoplayOn, setAutoplayOn] = useState(false)
-  const [size, setSize] = useState(15)
-  const [emptyBoard, setEmptyBoard] = useState(Array(size*size).fill(0));
+  const [autoplayOn, setAutoplayOn] = useState(false);
+  const [size, setSize] = useState(3);
+  const [emptyBoard, setEmptyBoard] = useState(Array(size * size).fill(0));
   const [board, setBoard] = useState(emptyBoard);
+  const [tiles, setTiles] = useState([]);
+
+  function loadTiles() {
+    let newTiles = [];
+    for (let i = 0; i < size * size; i++) {
+      newTiles.push(
+        <Tile
+          key={i}
+          index={i}
+          board={board}
+          setBoard={setBoard}
+          play={play}
+          autoplayOn={autoplayOn}
+          size={size}
+        />
+      );
+    }
+    setTiles(newTiles);
+  }
+
+  useEffect(() => {
+    loadTiles();
+  }, [board]);
+
+  useEffect(() => {
+    const newEmptyBoard = Array(size * size).fill(0);
+    setEmptyBoard(newEmptyBoard);
+    setBoard(newEmptyBoard);
+    loadTiles();
+  }, [size]);
+
+  function resize() {
+    if (size === 3) {
+      setSize(15);
+    } else {
+      setSize(3);
+    }
+  }
 
   function play(board) {
-    const mcts = new MCTS(2000, board, 1);
+    const mcts = new MCTS(10000, board, 1);
     const newBoard = mcts.search();
     setRootNode(mcts.root);
     setBoard(newBoard);
   }
 
-  const tiles = [];
-  for (let i = 0; i < size*size; i++) {
-    tiles.push(<Tile key={i} index={i} board={board} setBoard={setBoard} play={play} autoplayOn={autoplayOn} size={size}/>);
-  }
+
   return (
     <>
       <Menu />
@@ -127,42 +163,45 @@ function App() {
       >
         {!!isWin(board, true) && "플레이어 " + isWin(board, true) + " 승리"}
       </div>
-      <div className="absolute top-10 right-10 super-button font-bold text-xl text-blue-400" onClick={()=>{
-            if (size===3) 
-            {
-              setSize(15);
-              setEmptyBoard(Array(15*15).fill(0));
-              setBoard(emptyBoard);
-            }
-            else{
-              setSize(3);
-              setEmptyBoard(Array(3*3).fill(0));
-              setBoard(emptyBoard);
-            }
-          }}>
-        <span className="text-red-400">{size===3?"오목으로":"틱택토로"}</span> 변경
+      <div
+        className="absolute top-10 right-10 super-button font-bold text-xl text-blue-400"
+        onClick={resize}
+      >
+        <span className="text-red-400">
+          {size === 3 ? "오목으로" : "틱택토로"}
+        </span>{" "}
+        변경
       </div>
       <div className="flex justify-end items-center h-full w-full">
-        <div className={`flex-auto grid ${size === 3 ? 'grid-cols-3 xl:px-72 lg:px-28 md:px-16 sm:px-12 px-4' : 'grid-cols-15 xl:px-40 lg:px-20 md:px-10 sm:px-6 px-4'}`}>{tiles}</div>
-        <div className="grid grid-cols-1 xl:pr-40 lg:pr-40 md:pr-20 sm:pr-8">
+        <div
+          className={`flex-auto grid ${
+            size === 3
+              ? "grid-cols-3 xl:px-72 lg:px-28 md:px-16 sm:px-12 px-4"
+              : "grid-cols-15 xl:px-40 lg:px-20 md:px-10 sm:px-6 px-4"
+          }`}
+        >
+          {tiles}
+        </div>
+        <div className="grid grid-cols-1 xl:pr-40 lg:pr-16 md:pr-12 sm:pr-8">
           <div className="flex justify-center items-center h-12">
-            <p className="font-semibold">자동실행&nbsp;</p> <Toggle on={autoplayOn} setOn={setAutoplayOn}/>
+            <p className="font-semibold">자동실행&nbsp;</p>{" "}
+            <Toggle on={autoplayOn} setOn={setAutoplayOn} />
           </div>
           <button
-            onClick={()=>play(board)}
-            className="bg-red-400 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
+            onClick={() => play(board)}
+            className="bg-red-400 hover:bg-red-500 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
           >
             실행
           </button>
           <button
             onClick={() => setBoard(emptyBoard)}
-            className="bg-blue-400 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
+            className="bg-blue-400 hover:bg-blue-500 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
           >
             초기화
           </button>
           <button
             onClick={() => setShowTree(!showTree)}
-            className="bg-emerald-400 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
+            className="bg-emerald-400 hover:bg-emerald-500 text-white w-36 h-20 text-4xl font-semibold px-4 py-2 mx-20 my-2 rounded-lg"
           >
             트리
           </button>

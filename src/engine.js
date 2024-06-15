@@ -63,9 +63,9 @@ class Node {
    */
   determine() {
     if (!this.board.includes(0)) return [];
-    const b = [];
-    for (let i = 0; i < 225; i++) {
-      const newBoard = this.board.slice();
+    let b = [];
+    for (let i = 0; i < this.board.length; i++) {
+      let newBoard = this.board.slice();
       if (newBoard[i] === 0) {
         newBoard[i] = 3 - this.player;
         b.push(newBoard);
@@ -87,7 +87,7 @@ class Node {
   }
 
   simulate() {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 50; i++) {
       const result = this.state.simulate();
       switch (result[0]) {
         case this.player:
@@ -719,11 +719,9 @@ export function isWin(board) {
   if (board.length===225) return isOmokWin(board);
   for (const [a, b, c] of ticWin) {
     if (board[a] === board[b] && board[b] === board[c] && board[a] !== 0) {
-      board = null;
       return board[a];
     }
   }
-  board = null;
   return 0;
 }
 
@@ -756,9 +754,9 @@ class State {
       return [isWin(newBoard), this.round];
     }
     const randomMove = () => {
-      let r = Math.floor(Math.random() * 225);
+      let r = Math.floor(Math.random() * this.board.length);
       while (newBoard[r] != 0) {
-        r = Math.floor(Math.random() * 225);
+        r = Math.floor(Math.random() * this.board.length);
       }
       return r;
     };
