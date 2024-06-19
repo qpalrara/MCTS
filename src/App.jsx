@@ -145,8 +145,12 @@ function App() {
     }
   }
 
+  let mcts = null;
   function play(board) {
-    const mcts = new MCTS(10000, board, 1);
+    if (mcts !== null) {
+      mcts = null;
+    }
+    mcts = new MCTS(200000, board, 1);
     const newBoard = mcts.search();
     setRootNode(mcts.root);
     setBoard(newBoard);

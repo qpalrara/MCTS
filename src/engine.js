@@ -80,14 +80,37 @@ class Node {
     //     b.push(newBoard);
     //   }
     // }
-    for (let i = 0; i < this.board.length; i++) {
+    // for (let i = 0; i < this.board.length; i++) {
+    //   let newBoard = boardToString(this.board);
+    //   if (newBoard[i] == "0") {
+    //     newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
+    //     b.push(newBoard);
+    //   }
+    // }
+    for (let i of this.nearIndex()) {
       let newBoard = boardToString(this.board);
-      if (newBoard[i] == "0") {
-        newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
-        b.push(newBoard);
-      }
+      newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
+      b.push(newBoard);
     }
     return b;
+  }
+
+  nearIndex() {
+    let near = [];
+    const size = Math.sqrt(this.board.length);
+    for (let i = 0; i < this.board.length; i++) {
+      if (this.board[i] !== 0) {
+        for (let j of [-2*size, -size, 0, size, 2*size]) {
+          for (let k of [-2, -1, 0, 1, 2]) {
+            let idx = i + j + k;
+            if (idx >= 0 && idx < this.board.length && this.board[idx] === 0) {
+              near.push(idx);
+            }
+          }
+        }
+      }
+    }
+    return [...new Set(near)];
   }
 
   isTerminal() {
@@ -103,7 +126,7 @@ class Node {
   }
 
   simulate() {
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 2; i++) {
       const result = this.state.simulate();
       switch (result[0]) {
         case this.player:
