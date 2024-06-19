@@ -1,4 +1,4 @@
-a, b = 15, 15
+a, b = 9, 9
 n = max(a,b)
 k = 5
 # li = [[i * n + j for j in range(n)] for i in range(n)]

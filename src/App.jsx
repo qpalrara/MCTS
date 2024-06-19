@@ -26,7 +26,7 @@ function Tile({ index, board, setBoard, play, autoplayOn, size = 3 }) {
       ${
         size === 3
           ? "xl:text-8xl lg:text-8xl md:text-7xl sm:text-6xl text-5xl"
-          : "xl:text-3xl text-2xl"
+          : "xl:text-3xl lg:text-2xl md:text:lg sm:text-md text-sm"
       }
       ${value === 1 ? "text-blue-500" : value === 2 ? "text-red-500" : ""}`}
     >
