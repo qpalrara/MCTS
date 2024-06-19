@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import MCTS, { isWin, isOmokWin } from "./engine";
 import { Toggle, Menu } from "./UI";
-import { load } from "three/examples/jsm/libs/opentype.module.js";
 
 function Tile({ index, board, setBoard, play, autoplayOn, size = 3 }) {
   const value = board[index];
@@ -150,7 +149,7 @@ function App() {
     if (mcts !== null) {
       mcts = null;
     }
-    mcts = new MCTS(200000, board, 1);
+    mcts = new MCTS(50000, board, 1);
     const newBoard = mcts.search();
     setRootNode(mcts.root);
     setBoard(newBoard);

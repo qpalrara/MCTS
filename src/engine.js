@@ -6,6 +6,24 @@ function boardFromString(string) {
   return string.split("").map((x) => parseInt(x));
 }
 
+function nearIndex(board) {
+  let near = [];
+  const size = Math.sqrt(board.length);
+  for (let i = 0; i < board.length; i++) {
+    if (board[i] !== 0) {
+      for (let j of [-2*size, -size, 0, size, 2*size]) {
+        for (let k of [-2, -1, 0, 1, 2]) {
+          let idx = i + j + k;
+          if (idx >= 0 && idx < board.length && board[idx] === 0) {
+            near.push(idx);
+          }
+        }
+      }
+    }
+  }
+  return [...new Set(near)];
+}
+
 class Node {
   constructor(board, player, parent) {
     this.state = new State(board, player);
@@ -87,30 +105,12 @@ class Node {
     //     b.push(newBoard);
     //   }
     // }
-    for (let i of this.nearIndex()) {
+    for (let i of nearIndex(this.board)) {
       let newBoard = boardToString(this.board);
       newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
       b.push(newBoard);
     }
     return b;
-  }
-
-  nearIndex() {
-    let near = [];
-    const size = Math.sqrt(this.board.length);
-    for (let i = 0; i < this.board.length; i++) {
-      if (this.board[i] !== 0) {
-        for (let j of [-2*size, -size, 0, size, 2*size]) {
-          for (let k of [-2, -1, 0, 1, 2]) {
-            let idx = i + j + k;
-            if (idx >= 0 && idx < this.board.length && this.board[idx] === 0) {
-              near.push(idx);
-            }
-          }
-        }
-      }
-    }
-    return [...new Set(near)];
   }
 
   isTerminal() {
@@ -126,7 +126,7 @@ class Node {
   }
 
   simulate() {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 10; i++) {
       const result = this.state.simulate();
       switch (result[0]) {
         case this.player:
@@ -210,11 +210,8 @@ class State {
       return [isWin(newBoard), this.round];
     }
     const randomMove = () => {
-      let r = Math.floor(Math.random() * this.board.length);
-      while (newBoard[r] != 0) {
-        r = Math.floor(Math.random() * this.board.length);
-      }
-      return r;
+      const near = nearIndex(newBoard);
+      return near[Math.floor(Math.random() * near.length)];
     };
     this.round = 0;
     while (newBoard.includes(0)) {
