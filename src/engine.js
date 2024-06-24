@@ -11,7 +11,7 @@ function nearIndex(board) {
   const size = Math.sqrt(board.length);
   for (let i = 0; i < board.length; i++) {
     if (board[i] !== 0) {
-      for (let j of [-2*size, -size, 0, size, 2*size]) {
+      for (let j of [-2 * size, -size, 0, size, 2 * size]) {
         for (let k of [-2, -1, 0, 1, 2]) {
           let idx = i + j + k;
           if (idx >= 0 && idx < board.length && board[idx] === 0) {
@@ -24,9 +24,8 @@ function nearIndex(board) {
   return [...new Set(near)];
 }
 
-class Node {
+export class Node {
   constructor(board, player, parent) {
-    this.state = new State(board, player);
     this.board = board;
     this.player = player; // 현재 board 에서 마지막으로 둔 player
     this.parent = parent;
@@ -41,10 +40,10 @@ class Node {
   selection() {
     if (this.isTerminal()) {
       this.possibleMoves.length = 0;
-      this.simulate();
+      this.simulation();
       return this;
     }
-    if (!this.isFull()) return this;
+    if (!this._isFull()) return this;
     let selectedNode = null;
     let maxUct = -Infinity;
     for (const child of this.children) {
@@ -55,23 +54,19 @@ class Node {
       }
     }
     // console.log(selectedNode)
-    if (selectedNode.isFull()) return selectedNode.selection();
-    if (selectedNode.isTerminal()) selectedNode.simulate();
+    if (selectedNode._isFull()) return selectedNode.selection();
+    if (selectedNode.isTerminal()) selectedNode.simulation();
     return selectedNode;
   }
 
   calculateUCT(node) {
-    const wins = node.wins;
-    const draws = node.draws;
-    const visits = node.visits;
-    const parentVisits = this.visits;
     const C = Math.sqrt(2);
-    if (visits === 0) {
+    if (node.visits === 0) {
       return Infinity;
     }
     return (
-      (wins + 0.5 * draws) / visits +
-      C * Math.sqrt(Math.log(parentVisits) / visits)
+      (node.wins + 0.5 * node.draws) / node.visits +
+      C * Math.sqrt(Math.log(this.visits) / node.visits)
     );
   }
 
@@ -79,7 +74,9 @@ class Node {
     if (this.possibleMoves.length === 0) return null;
     const randomIndex = Math.floor(Math.random() * this.possibleMoves.length);
     // const newBoard = this.possibleMoves.splice(randomIndex, 1)[0];
-    const newBoard = boardFromString(this.possibleMoves.splice(randomIndex, 1)[0]);
+    const newBoard = boardFromString(
+      this.possibleMoves.splice(randomIndex, 1)[0]
+    );
     const newNode = new Node(newBoard, 3 - this.player, this);
     this.children.push(newNode);
     return newNode;
@@ -91,33 +88,69 @@ class Node {
   determine() {
     if (!this.board.includes(0)) return [];
     let b = [];
-    // for (let i = 0; i < this.board.length; i++) {
-    //   let newBoard = this.board.slice();
-    //   if (newBoard[i] === 0) {
-    //     newBoard[i] = 3 - this.player;
-    //     b.push(newBoard);
-    //   }
-    // }
-    // for (let i = 0; i < this.board.length; i++) {
-    //   let newBoard = boardToString(this.board);
-    //   if (newBoard[i] == "0") {
-    //     newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
-    //     b.push(newBoard);
-    //   }
-    // }
-    for (let i of nearIndex(this.board)) {
-      let newBoard = boardToString(this.board);
-      newBoard = newBoard.substring(0, i) + (3 - this.player).toString() + newBoard.substring(i + 1);
-      b.push(newBoard);
+
+    if (Node.expansionNear) {
+      for (let i of nearIndex(this.board)) {
+        let newBoard = boardToString(this.board);
+        newBoard =
+          newBoard.substring(0, i) +
+          (3 - this.player).toString() +
+          newBoard.substring(i + 1);
+        b.push(newBoard);
+      }
+      return b;
     }
+
+    for (let i = 0; i < this.board.length; i++) {
+      let newBoard = boardToString(this.board);
+      if (newBoard[i] == "0") {
+        newBoard =
+          newBoard.substring(0, i) +
+          (3 - this.player).toString() +
+          newBoard.substring(i + 1);
+        b.push(newBoard);
+      }
+    }
+
     return b;
+  }
+
+  simulation() {
+    const playout = () => {
+      const newBoard = this.board.slice();
+      let player = this.player;
+      const res = isWin(newBoard);
+      if (res) {
+        return res;
+      }
+
+      while (newBoard.includes(0)) {
+        newBoard[this._getRandomMove(newBoard)] = 3 - player;
+        const result = isWin(newBoard);
+        if (result) {
+          return result;
+        }
+        player = 3 - player;
+      }
+      return 0;
+    };
+    for (let i = 0; i < Node.simulation_count; i++) {
+      const result = playout();
+      if (result === this.player) {
+        this._addWins(1);
+      } else if (result === 3 - this.player) {
+        this._addLoses(1);
+      } else {
+        this._addDraws(1);
+      }
+    }
   }
 
   isTerminal() {
     return isWin(this.board) !== 0 || this.board.includes(0) === false;
   }
 
-  isFull() {
+  _isFull() {
     return this.possibleMoves.length === 0;
   }
 
@@ -125,54 +158,41 @@ class Node {
     return this.visits > 0 ? (this.wins + 0.5 * this.draws) / this.visits : 0;
   }
 
-  simulate() {
-    for (let i = 0; i < 10; i++) {
-      const result = this.state.simulate();
-      switch (result[0]) {
-        case this.player:
-          this.addWins(1);
-          // this.addWins(10-result[1]);
-          break;
-        case 3 - this.player:
-          this.addLoses(1);
-          // this.addLoses(10-result[1]);
-          break;
-        case 0:
-          this.addDraws(1);
-          break;
-      }
+  _getRandomMove(board) {
+    if (Node.simulationNear) {
+      const near = nearIndex(board);
+      return near[Math.floor(Math.random() * near.length)];
     }
+    const empty_spots = board
+      .map((c, i) => (c === 0 ? i : -1))
+      .filter((c) => c !== -1);
+    const randomIndex = Math.floor(Math.random() * empty_spots.length);
+    return empty_spots[randomIndex];
   }
 
-  addWins(weight = 1) {
+  _addWins(weight = 1) {
     this.wins += weight;
     this.visits += weight;
-    if (this.parent !== null) this.parent.addLoses(weight);
+    if (this.parent !== null) this.parent._addLoses(weight);
   }
 
-  addDraws(weight = 1) {
+  _addDraws(weight = 1) {
     this.draws += weight;
     this.visits += weight;
-    if (this.parent !== null) this.parent.addDraws(weight);
+    if (this.parent !== null) this.parent._addDraws(weight);
   }
 
-  addLoses(weight = 1) {
+  _addLoses(weight = 1) {
     this.loses += weight;
     this.visits += weight;
-    if (this.parent !== null) this.parent.addWins(weight);
-  }
-}
-
-export class RootNode extends Node {
-  constructor(board = [0, 0, 0, 0, 0, 0, 0, 0, 0], player = 1, parent = null) {
-    super(board, player, parent);
+    if (this.parent !== null) this.parent._addWins(weight);
   }
 }
 
 import { ticWin, omokWin } from "./win.js";
 
 export function isWin(board) {
-  if (board.length===225) return isOmokWin(board);
+  if (board.length === 225) return isOmokWin(board);
   for (const [a, b, c] of ticWin) {
     if (board[a] === board[b] && board[b] === board[c] && board[a] !== 0) {
       return board[a];
@@ -180,7 +200,6 @@ export function isWin(board) {
   }
   return 0;
 }
-
 
 export function isOmokWin(board) {
   for (const [a, b, c, d, e] of omokWin) {
@@ -196,82 +215,3 @@ export function isOmokWin(board) {
   }
   return 0;
 }
-
-class State {
-  constructor(board, player) {
-    this.board = board;
-    this.player = player; // 현재 board 에서 마지막으로 둔 player
-    this.round = 0;
-  }
-
-  simulate() {
-    const newBoard = this.board.slice();
-    if (isWin(newBoard)) {
-      return [isWin(newBoard), this.round];
-    }
-    const randomMove = () => {
-      const near = nearIndex(newBoard);
-      return near[Math.floor(Math.random() * near.length)];
-    };
-    this.round = 0;
-    while (newBoard.includes(0)) {
-      this.round += 1;
-      newBoard[randomMove()] = 3 - this.player;
-      if (isWin(newBoard)) {
-        return [isWin(newBoard), this.round];
-      }
-      this.player = this.player === 1 ? 2 : 1;
-    }
-    return [0, Math.floor(this.round / 2)];
-  }
-}
-
-export default class MCTS {
-  constructor(
-    n_iterations = 1000,
-    board = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    player = 1,
-  ) {
-    this.n_iterations = n_iterations;
-    this.board = board;
-    this.player = player;
-    this.root = new Node(board, player, null);
-  }
-
-  search() {
-    for (let i = 0; i < this.n_iterations; i++) {
-      if (i%100===0) console.log(Math.round(i/this.n_iterations*100*10)/10 + "%");
-      let node = this.root;
-
-      node = node.selection();
-      // console.log("selection", node);
-      if (node === null) return this.nextBoard();
-      if (node.isTerminal()) {
-        // console.log("터미널");
-        continue;
-      }
-
-      node = node.expansion();
-      // console.log("expansion", node);
-      if (node === null) {
-        // console.log("확장 중지");
-        continue;
-      }
-
-      node.simulate();
-    }
-    return this.nextBoard();
-  }
-
-  nextBoard() {
-    return this.root.children.reduce(
-      (a, b) => (a.winRate() > b.winRate() ? a : b),
-      this.root.children[0]
-    ).board;
-  }
-}
-
-// const board = new Array(225).fill(0);
-// board[113] = 1;
-// const mcts = new MCTS(10000, board);
-// console.log(mcts.search());
